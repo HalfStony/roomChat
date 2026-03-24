@@ -43,6 +43,19 @@
             background: #D9D9D9; border-radius: 24px; border: none; cursor: pointer;
         }
 
+        /* --- ADMIN PANEL SYSTEM --- */
+        #admin-panel { 
+            display: none; position: absolute; left: 20px; top: 185px; 
+            flex-direction: column; gap: 5px; width: 150px; padding-top: 10px; border-top: 1px solid #ccc;
+        }
+        .admin-btn { background: #eee; border: 1px solid #ccc; border-radius: 8px; cursor: pointer; font-size: 11px; padding: 5px; margin-bottom: 5px; }
+        .ban-link { color: #ff4d4d; font-weight: bold; cursor: pointer; margin-left: 5px; font-size: 10px; text-decoration: underline; }
+        
+        /* The "Secret Sauce": Hides admin elements unless body has 'admin-mode' class */
+        .admin-only { display: none; }
+        body.admin-mode .admin-only { display: inline-block; }
+        body.admin-mode #admin-panel { display: flex; }
+
         /* --- MESSAGE SCROLL AREA --- */
         #chat-window {
             flex: 1; margin: 0 auto; width: 100%; max-width: 800px; overflow-y: auto;
@@ -87,9 +100,26 @@
             position: fixed; bottom: 0; width: 100%; height: 29px; background: #D9D9D9;
             display: flex; align-items: center; gap: 30px; padding: 0 20px; font-size: 12px;
         }
+
+        /* --- BANNED SCREEN --- */
+        #banned-screen {
+            display: none; position: fixed; inset: 0; 
+            background: #FFC7D3; z-index: 2000;
+            flex-direction: column; align-items: center; justify-content: center;
+            text-align: center; font-family: 'Inter'; color: #000;
+        }
+        .ban-title { font-size: 48px; margin-bottom: 20px; }
+        .ban-subtitle { font-size: 32px; margin-bottom: 10px; }
+        .ban-reason { font-size: 24px; font-weight: 500; background: rgba(255,255,255,0.3); padding: 10px 20px; border-radius: 12px; }
     </style>
 </head>
 <body>
+
+    <div id="banned-screen">
+        <div class="ban-title">You were banned :(</div>
+        <div class="ban-subtitle">Hey man! Chill a bit! Looks like the owner banned you for:</div>
+        <div id="ban-reason-text" class="ban-reason">No reason given</div>
+    </div>
 
     <div id="login-screen">
         <div class="window_rect">
@@ -112,12 +142,23 @@
         <a id="clientIdTxt" class="side-text" href="#" style="color: #748CFF; text-decoration: underline; cursor: pointer;">ClientId: none</a>
         <button class="logout-btn" onclick="location.reload()">logout</button>
 
+        <div id="admin-panel">
+            <span style="color: #748CFF; font-size: 12px; display: block; margin-bottom: 5px; font-weight: bold;">ADMIN PANEL</span>
+            <button class="admin-btn" onclick="showBannedList()">Show Banned</button> <button class="admin-btn" onclick="unbanPrompt()">Unban an ID</button>
+            <button class="admin-btn" onclick="exitAdmin()">Exit Admin</button>
+        </div>
+
         <div id="chat-window"></div>
 
         <div class="controls-container">
-            <label class="autoscroll-check">
-                <input type="checkbox" id="autoscroll_toggle" checked> Auto-scroll
-            </label>
+            <div class="autoscroll-check" style="display: flex; gap: 15px; align-items: center;">
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="autoscroll_toggle" checked> Auto-scroll
+                </label>
+                <label style="cursor: pointer; display: flex; align-items: center; gap: 5px;">
+                    <input type="checkbox" id="notif_toggle" checked> Notifications
+                </label>
+            </div>
             <div class="input-container">
                 <textarea id="message-input" placeholder="Type your message..."></textarea>
                 <button id="send-btn"><div class="arrow-up"></div></button>
@@ -135,31 +176,70 @@
         import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
         let supabase, username, roomName;
+        const ADMIN_PASS = "lemmein"; // <--- Set your password here
+
         const loginBtn = document.getElementById('login_btn');
         const sendBtn = document.getElementById('send-btn');
         const chatWindow = document.getElementById('chat-window');
         const messageInput = document.getElementById('message-input');
         const autoscrollToggle = document.getElementById('autoscroll_toggle');
-        const clientIdTxt = document.getElementById('clientIdTxt')
-
-        // --- Client ID logic ---
-        let clientId = localStorage.getItem("clientId");
-        if (!clientId) {
-            clientId = crypto.randomUUID();
-            localStorage.setItem("clientId", clientId);
-        }
-
-        // Show the short version in the UI
-        clientIdTxt.innerText = "ClientId: " + clientId.substring(0, 8) + "...";
-
-        // Click event for the full ID
-        clientIdTxt.onclick = (e) => {
-            e.preventDefault(); // Stop the page from jumping
-            console.log("FULL CLIENT ID:", clientId);
-            alert("Logged full Client ID in logs!");
+        const clientIdTxt = document.getElementById('clientIdTxt');
+        const notifToggle = document.getElementById('notif_toggle');
+        
+        if (Notification.permission === "default") Notification.requestPermission();
+        notifToggle.onchange = () => {
+            if (notifToggle.checked && Notification.permission !== "granted") Notification.requestPermission();
         };
 
-        loginBtn.onclick = () => {
+        let clientId = localStorage.getItem("clientId") || crypto.randomUUID();
+        localStorage.setItem("clientId", clientId);
+        clientIdTxt.innerText = "ClientId: " + clientId.substring(0, 8) + "...";
+
+        // Admin Trigger
+        clientIdTxt.onclick = (e) => {
+            e.preventDefault();
+            const pass = prompt("Admin Password:");
+            if (pass === ADMIN_PASS) {
+                document.body.classList.add('admin-mode');
+                alert("Admin Mode Active.");
+            } else if (pass === null) {
+                console.log("FULL CLIENT ID:", clientId);
+                alert("Logged full Client ID in logs!");
+            }
+        };
+
+        window.showBannedList = async () => {
+            const { data: bans, error } = await supabase
+                .from('banned_ids')
+                .select('*');
+
+            if (error) {
+                alert("Error fetching bans: " + error.message);
+                return;
+            }
+
+            if (!bans || bans.length === 0) {
+                alert("The ban hammer has not been used yet. (0 bans)");
+                return;
+            }
+
+            // Format the list for the alert
+            let list = "BANNED USERS:\n------------------\n";
+            bans.forEach((b, index) => {
+                list += `${index + 1}. ID: ${b.client_id.substring(0, 8)}...\n`;
+                list += `   Room: ${b.room} | Reason: ${b.reason || 'None'}\n\n`;
+            });
+
+            // Using alert for simplicity, or log to console for easy copying
+            console.log("FULL BAN LIST:", bans);
+            alert(list + "Check console (F12) for full IDs to copy/paste for unbanning.");
+        };
+
+        window.exitAdmin = () => {
+            document.body.classList.remove('admin-mode');
+        };
+
+        loginBtn.onclick = async () => {
             const url = "https://ucgbhaggcdpsdhncgwzb.supabase.co";
             const key = document.getElementById('anon_key_input').value.trim();
             username = document.getElementById('username_txt').value.trim();
@@ -168,16 +248,63 @@
             if (!key || !username || !roomName) return alert("Missing info");
 
             supabase = createClient(url, key);
+
+            // Initial Ban Check
+            const { data: banEntry } = await supabase
+                .from('banned_ids')
+                .select('*')
+                .eq('client_id', clientId)
+                .or(`room.eq.all,room.eq.${roomName}`)
+                .maybeSingle();
+
+            if (banEntry) {
+                showBanScreen(banEntry.reason);
+                return; 
+            }
+
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('main-chat').style.display = 'flex';
             document.getElementById('display-name').innerText = username;
             document.getElementById('display-room').innerText = roomName;
 
-            // Subscribe to real-time
+            // Chat Sub
             supabase.channel('chat').on('postgres_changes', 
                 { event: 'INSERT', schema: 'public', table: roomName }, 
                 payload => renderMessage(payload.new)
             ).subscribe();
+
+            // Real-time Bouncer
+            supabase.channel('bouncer').on('postgres_changes', 
+                { event: 'INSERT', schema: 'public', table: 'banned_ids' }, 
+                payload => {
+                    if (payload.new.client_id === clientId && (payload.new.room === 'all' || payload.new.room === roomName)) {
+                        showBanScreen(payload.new.reason);
+                    }
+                }
+            ).subscribe();
+        };
+
+        function showBanScreen(reason) {
+            document.getElementById('main-chat').style.display = 'none';
+            document.getElementById('banned-screen').style.display = 'flex';
+            document.getElementById('ban-reason-text').innerText = reason || "No reason given";
+        }
+
+        window.banUser = async (targetId) => {
+            const reason = prompt("Reason for ban?", "No reason given");
+            const scope = prompt("Room? (all or " + roomName + ")", "all");
+            if (scope) {
+                await supabase.from('banned_ids').insert({ client_id: targetId, reason, room: scope });
+                alert("User Banned.");
+            }
+        };
+
+        window.unbanPrompt = async () => {
+            const targetId = prompt("Enter full Client ID to unban:");
+            if (targetId) {
+                const { error } = await supabase.from('banned_ids').delete().eq('client_id', targetId);
+                if (!error) alert("Unbanned successfully.");
+            }
         };
 
         async function sendMessage() {
@@ -195,15 +322,23 @@
             div.className = `msg-box ${isMe ? 'msg-own' : 'msg-other'}`;
             div.innerHTML = `
                 <div class="msg-header">
-                    <span>${msg.user}</span>
-                    <span class="msg-id">message id: ${msg.id || '...'}</span>
+                    <span>
+                        ${msg.user} 
+                        <span class="admin-only">
+                            <br><small style="color:#748CFF">ID: ${msg.client_id}</small> 
+                            <span class="ban-link" onclick="banUser('${msg.client_id}')">[BAN]</span>
+                        </span>
+                    </span>
+                    <span class="msg-id">id: ${msg.id || '...'}</span>
                     <span class="msg-time">${time}</span>
                 </div>
                 <div class="msg-text">${msg.text}</div>
             `;
             chatWindow.appendChild(div);
             
-            // Handle Auto-scroll check
+            if (notifToggle.checked && document.hidden && !isMe) {
+                new Notification(`New message from ${msg.user}`, { body: msg.text });
+            }
             if (autoscrollToggle.checked) {
                 chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
             }
