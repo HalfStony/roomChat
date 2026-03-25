@@ -235,6 +235,12 @@
             supabase.channel('bouncer').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'banned_ids' }, p => {
                 if (p.new.client_id === clientId && (p.new.room === 'all' || p.new.room === roomName)) showBanScreen(p.new.reason);
             }).subscribe();
+            // --- Inside loginBtn.onclick ---
+            if (notifToggle.checked) {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") console.log("Notifications enabled");
+                });
+            }
         };
 
         async function sendMessage() {
@@ -272,7 +278,14 @@
                 <div class="msg-text">${msg.text}</div>
             `;
             chatWindow.appendChild(div);
+            // --- Inside renderMessage(msg) ---
+            if (!isMe && notifToggle.checked && !document.hasFocus()) {
+            new Notification(`New message from ${msg.user}`, {
+                body: msg.text,
+            });
+        }
             if (autoscrollToggle.checked) chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+
         }
 
         sendBtn.onclick = sendMessage;
