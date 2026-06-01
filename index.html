@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>nothing sussss</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #f8f7f5;
+            --surface: #ffffff;
+            --surface2: #f0eeeb;
+            --border: rgba(0,0,0,0.08);
+            --text: #1a1a1a;
+            --text-muted: #888;
+            --accent: #5b6ef5;
+            --accent-light: #e8eaff;
+            --msg-other: #ececec;
+            --msg-own: #c8dcff;
+            --danger: #ff4d4d;
+            --pink: #ffd6d6;
+            --input-bg: #ffe8e8;
+            --shadow: 0 4px 24px rgba(0,0,0,0.08);
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.06);
+            --radius: 18px;
+            --radius-sm: 10px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body, html {
+            height: 100%; width: 100%;
+            background: var(--bg);
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            overflow: hidden;
+        }
+
+        /* ---- CUSTOM MODAL SYSTEM ---- */
+        #modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.35);
+            backdrop-filter: blur(4px);
+            z-index: 5000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+        #modal-overlay.open { display: flex; }
+        .modal-box {
+            background: var(--surface);
+            border-radius: 22px;
+            padding: 28px 32px;
+            min-width: 340px;
+            max-width: 480px;
+            width: 90vw;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+            animation: modalIn 0.18s ease;
+        }
+        @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(6px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-title {
+            font-size: 17px; font-weight: 600; margin-bottom: 10px;
+        }
+        .modal-body { font-size: 14px; color: var(--text-muted); margin-bottom: 18px; line-height: 1.5; }
+        .modal-input {
+            width: 100%; border: 1.5px solid var(--border);
+            border-radius: var(--radius-sm); padding: 10px 14px;
+            font-size: 14px; font-family: 'DM Sans', sans-serif;
+            background: var(--surface2); outline: none; margin-bottom: 14px;
+            transition: border-color 0.15s;
+        }
+        .modal-input:focus { border-color: var(--accent); }
+        .modal-textarea { resize: vertical; min-height: 70px; }
+        .modal-btns { display: flex; gap: 10px; justify-content: flex-end; }
+        .modal-btn {
+            padding: 9px 20px; border-radius: 10px; border: none;
+            font-size: 14px; font-family: 'DM Sans', sans-serif; font-weight: 500;
+            cursor: pointer; transition: opacity 0.15s, transform 0.1s;
+        }
+        .modal-btn:active { transform: scale(0.97); }
+        .modal-btn.primary { background: var(--accent); color: #fff; }
+        .modal-btn.secondary { background: var(--surface2); color: var(--text); }
+        .modal-btn.danger { background: var(--danger); color: #fff; }
+        .modal-scroll-list {
+            max-height: 200px; overflow-y: auto;
+            background: var(--surface2); border-radius: var(--radius-sm);
+            padding: 10px; margin-bottom: 14px; font-size: 13px;
+            font-family: 'DM Mono', monospace; white-space: pre-wrap; line-height: 1.7;
+        }
+        .modal-notice { 
+            background: var(--accent-light); color: var(--accent); 
+            border-radius: var(--radius-sm); padding: 10px 14px; 
+            font-size: 13px; margin-bottom: 14px; font-weight: 500;
+        }
+
+        /* ---- LOGIN SCREEN ---- */
+        #login-screen {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex; justify-content: center; align-items: center; z-index: 1000;
+            backdrop-filter: blur(6px);
+        }
+        .window_rect {
+            width: 440px;
+            background: var(--surface);
+            border-radius: 28px;
+            display: flex; flex-direction: column;
+            padding: 36px 36px 28px;
+            box-shadow: 0 24px 72px rgba(0,0,0,0.18);
+            gap: 4px;
+        }
+        .login-title {
+            font-size: 22px; font-weight: 600; margin-bottom: 16px;
+            color: var(--text);
+        }
+        .login-label { font-size: 13px; font-weight: 500; color: var(--text-muted); margin-bottom: 4px; margin-top: 10px; }
+        .input-field {
+            width: 100%; height: 42px;
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 0 14px;
+            font-size: 14px;
+            font-family: 'DM Sans', sans-serif;
+            outline: none;
+            transition: border-color 0.15s;
+        }
+        .input-field:focus { border-color: var(--accent); }
+        textarea.input-field { padding: 10px 14px; height: 72px; resize: none; }
+        .login-btn {
+            margin-top: 20px; height: 46px;
+            background: var(--accent);
+            border-radius: 13px; border: none;
+            cursor: pointer;
+            font-size: 15px; font-weight: 600;
+            color: #fff;
+            font-family: 'DM Sans', sans-serif;
+            transition: opacity 0.15s, transform 0.1s;
+        }
+        .login-btn:hover { opacity: 0.9; }
+        .login-btn:active { transform: scale(0.98); }
+
+        /* ---- MAIN CHAT LAYOUT ---- */
+        #main-chat { display: none; height: 100vh; flex-direction: column; position: relative; }
+
+        /* ---- SIDEBAR ---- */
+        #sidebar {
+            position: absolute; left: 0; top: 0; bottom: 0;
+            width: 200px;
+            background: var(--surface);
+            border-right: 1px solid var(--border);
+            display: flex; flex-direction: column;
+            padding: 20px 16px;
+            gap: 8px;
+            z-index: 100;
+        }
+        .avatar-wrap {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 4px;
+        }
+        .avatar-bg {
+            width: 42px; height: 42px;
+            background: var(--accent-light);
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        .avatar-name { font-weight: 600; font-size: 14px; line-height: 1.2; word-break: break-word; }
+        .avatar-room { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+        #clientIdTxt {
+            font-size: 11px; color: var(--accent);
+            font-family: 'DM Mono', monospace;
+            text-decoration: none; cursor: pointer;
+            background: var(--accent-light); border-radius: 8px;
+            padding: 5px 8px; display: block;
+            transition: opacity 0.15s;
+            margin-top: 2px;
+        }
+        #clientIdTxt:hover { opacity: 0.75; }
+        .side-btn {
+            background: var(--surface2); border: 1px solid var(--border);
+            border-radius: 10px; padding: 7px 12px;
+            font-size: 13px; font-family: 'DM Sans', sans-serif;
+            cursor: pointer; text-align: left; font-weight: 500;
+            color: var(--text); transition: background 0.12s;
+        }
+        .side-btn:hover { background: var(--border); }
+        .side-divider { height: 1px; background: var(--border); margin: 6px 0; }
+        .side-label { font-size: 10px; font-weight: 600; color: var(--text-muted); letter-spacing: 0.07em; text-transform: uppercase; margin-top: 2px; }
+        #admin-panel { display: none; flex-direction: column; gap: 6px; }
+        body.admin-mode #admin-panel { display: flex; }
+        .admin-only { display: none; }
+        body.admin-mode .admin-only { display: inline; }
+        .ban-link {
+            color: var(--danger); cursor: pointer;
+            font-size: 11px; font-weight: 600;
+            background: rgba(255,77,77,0.1); border-radius: 5px;
+            padding: 1px 6px; margin-left: 6px;
+            transition: background 0.1s;
+        }
+        .ban-link:hover { background: rgba(255,77,77,0.2); }
+
+        /* ---- CHAT AREA ---- */
+        #chat-window {
+            flex: 1;
+            margin-left: 200px;
+            overflow-y: auto;
+            padding: 24px 24px 180px;
+            display: flex; flex-direction: column; gap: 14px;
+        }
+        .msg-box {
+            position: relative;
+            max-width: 640px; min-width: 120px;
+            border-radius: 20px; padding: 14px 18px;
+            flex-shrink: 0;
+            box-shadow: var(--shadow-sm);
+            animation: msgIn 0.18s ease;
+        }
+        @keyframes msgIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .msg-other { background: var(--msg-other); align-self: flex-start; border-bottom-left-radius: 6px; }
+        .msg-own   { background: var(--msg-own);   align-self: flex-end;   border-bottom-right-radius: 6px; }
+        .msg-header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 6px; flex-wrap: wrap; }
+        .msg-username { font-size: 13px; font-weight: 600; }
+        .msg-id { font-size: 11px; color: var(--text-muted); font-family: 'DM Mono', monospace; }
+        .msg-time { font-size: 11px; color: var(--text-muted); margin-left: auto; }
+        .msg-text { font-size: 15px; line-height: 1.5; word-break: break-word; }
+        .msg-text a { color: var(--accent); text-decoration: underline; word-break: break-all; }
+        .msg-text a:hover { opacity: 0.75; }
+        .msg-image {
+            max-width: 100%; max-height: 280px;
+            border-radius: 12px; margin-top: 8px;
+            display: block; cursor: pointer;
+            transition: opacity 0.15s;
+        }
+        .msg-image:hover { opacity: 0.9; }
+        .msg-img-error { 
+            background: var(--surface2); border-radius: 10px; 
+            padding: 8px 12px; font-size: 12px; color: var(--text-muted); 
+            margin-top: 6px; font-style: italic;
+        }
+
+        /* ---- CONTROLS ---- */
+        .controls-wrap {
+            position: fixed; bottom: 0; left: 200px; right: 0;
+            background: linear-gradient(to top, var(--bg) 70%, transparent);
+            padding: 16px 24px 20px;
+            display: flex; flex-direction: column; gap: 8px;
+        }
+        .controls-top { display: flex; align-items: center; gap: 12px; }
+        .toggle-label { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-muted); cursor: pointer; user-select: none; }
+        .toggle-label input { accent-color: var(--accent); }
+        .input-container {
+            background: var(--input-bg);
+            border-radius: 18px;
+            display: flex; align-items: flex-end;
+            padding: 10px 10px 10px 14px;
+            gap: 8px;
+            border: 1.5px solid rgba(255,150,150,0.2);
+        }
+        #message-input {
+            flex: 1; background: transparent; border: none;
+            font-size: 15px; font-family: 'DM Sans', sans-serif;
+            outline: none; resize: none;
+            height: 36px; max-height: 120px;
+            line-height: 1.5;
+        }
+        .tool-btn {
+            width: 36px; height: 36px; border-radius: 10px;
+            border: none; background: rgba(0,0,0,0.06); cursor: pointer;
+            font-size: 18px; display: flex; align-items: center; justify-content: center;
+            transition: background 0.12s;
+            flex-shrink: 0;
+        }
+        .tool-btn:hover { background: rgba(0,0,0,0.12); }
+        #send-btn {
+            width: 40px; height: 40px; background: var(--accent);
+            border-radius: 50%; border: none; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0; transition: opacity 0.15s, transform 0.1s;
+        }
+        #send-btn:hover { opacity: 0.88; }
+        #send-btn:active { transform: scale(0.94); }
+        .arrow-icon { width: 0; height: 0; border-left: 8px solid transparent; border-right: 8px solid transparent; border-bottom: 12px solid white; }
+
+        /* ---- EMOJI PICKER ---- */
+        #emoji-picker {
+            position: absolute; bottom: 100%; left: 0;
+            background: var(--surface); border-radius: 18px;
+            padding: 14px; box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+            display: none; flex-wrap: wrap; gap: 4px;
+            width: 280px; max-height: 220px; overflow-y: auto;
+            z-index: 200;
+            border: 1px solid var(--border);
+        }
+        #emoji-picker.open { display: flex; }
+        .emoji-item {
+            width: 36px; height: 36px; border-radius: 8px; border: none;
+            background: none; cursor: pointer; font-size: 22px;
+            display: flex; align-items: center; justify-content: center;
+            transition: background 0.1s;
+        }
+        .emoji-item:hover { background: var(--surface2); }
+
+        /* ---- PICTURE PICKER ---- */
+        #pic-picker {
+            position: absolute; bottom: 100%; left: 46px;
+            background: var(--surface); border-radius: 18px;
+            padding: 16px; box-shadow: 0 8px 32px rgba(0,0,0,0.14);
+            display: none; flex-direction: column; gap: 10px;
+            width: 300px; z-index: 200;
+            border: 1px solid var(--border);
+        }
+        #pic-picker.open { display: flex; }
+        #pic-picker label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+        #pic-url-input {
+            width: 100%; border: 1.5px solid var(--border);
+            border-radius: 10px; padding: 9px 12px;
+            font-size: 13px; font-family: 'DM Sans', sans-serif;
+            outline: none; background: var(--surface2);
+        }
+        #pic-url-input:focus { border-color: var(--accent); }
+        #pic-preview {
+            width: 100%; height: 120px; background: var(--surface2);
+            border-radius: 12px; object-fit: cover; display: none;
+        }
+        #pic-insert-btn {
+            background: var(--accent); color: #fff;
+            border: none; border-radius: 10px; padding: 9px;
+            font-size: 13px; font-weight: 600; font-family: 'DM Sans', sans-serif;
+            cursor: pointer;
+        }
+        #pic-insert-btn:hover { opacity: 0.88; }
+
+        /* ---- STATUS BAR ---- */
+        #status-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            height: 0px; /* hidden, managed by controls-wrap spacing */
+        }
+
+        /* ---- BAN SCREEN ---- */
+        #banned-screen {
+            display: none; position: fixed; inset: 0;
+            background: linear-gradient(135deg, #ffe0e0, #ffd6e0);
+            z-index: 2000; flex-direction: column;
+            align-items: center; justify-content: center; text-align: center;
+            gap: 14px;
+        }
+        .ban-icon { font-size: 72px; animation: banBounce 0.5s ease; }
+        @keyframes banBounce {
+            0% { transform: scale(0); }
+            70% { transform: scale(1.15); }
+            100% { transform: scale(1); }
+        }
+        #banned-screen h1 { font-size: 38px; font-weight: 700; color: var(--danger); }
+        #banned-screen p { font-size: 17px; color: #666; }
+
+        /* scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 6px; }
+
+        /* picker container needs relative */
+        .picker-anchor { position: relative; }
+
+        /* ---- INLINE IMAGE LIGHTBOX ---- */
+        #lightbox {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            z-index: 9000; display: none; align-items: center; justify-content: center;
+            cursor: zoom-out;
+        }
+        #lightbox.open { display: flex; }
+        #lightbox img { max-width: 90vw; max-height: 90vh; border-radius: 12px; }
+    </style>
+</head>
+<body>
+
+<div id="lightbox" onclick="document.getElementById('lightbox').classList.remove('open')">
+    <img id="lightbox-img" src="" alt="">
+</div>
+
+<div id="modal-overlay">
+    <div class="modal-box" id="modal-box">
+        <div class="modal-title" id="modal-title"></div>
+        <div id="modal-content"></div>
+        <div class="modal-btns" id="modal-btns"></div>
+    </div>
+</div>
+
+<div id="banned-screen">
+    <div class="ban-icon">🔨</div>
+    <h1>You were banned</h1>
+    <p>Reason: <span id="ban-reason-text">No reason given</span></p>
+    <button class="side-btn" id="self-unban-btn">🔓 Self-Unban</button>
+</div>
+
+<div id="login-screen">
+    <div class="window_rect">
+        <div class="login-title">Join the room</div>
+        <label class="login-label">Username</label>
+        <input type="text" id="username_txt" class="input-field" placeholder="Choose a name...">
+        <label class="login-label">Anon Key</label>
+        <textarea id="anon_key_input" class="input-field" placeholder="Supabase Anon Key..."></textarea>
+        <label class="login-label">Room Password</label>
+        <input type="password" id="room_pass_input" class="input-field" placeholder="The secret lock...">
+        <label class="login-label">Room Table Name</label>
+        <input type="text" id="room_input" class="input-field" value="room1">
+        <button id="login_btn" class="login-btn">Logon</button>
+    </div>
+</div>
+
+<div id="main-chat">
+    <div id="sidebar">
+        <div class="avatar-wrap">
+            <div class="avatar-bg">😶</div>
+            <div>
+                <div class="avatar-name" id="display-name">Username</div>
+                <div class="avatar-room" id="display-room">room1</div>
+            </div>
+        </div>
+        <a id="clientIdTxt" href="#">ID: none</a>
+        <button class="side-btn" id="switch-room-btn">Switch Room</button>
+        <button class="side-btn" id="logout-btn">Logout</button>
+
+        <div class="side-divider"></div>
+        <div id="admin-panel">
+            <div class="side-label">Admin</div>
+            <button class="side-btn" onclick="showBannedList()">📋 Banned List</button>
+            <button class="side-btn" onclick="unbanPrompt()">✅ Unban ID</button>
+            <button class="side-btn" onclick="loadRecentMessages()">📜 Load Recent</button>
+            <button class="side-btn" onclick="exitAdmin()">❌ Exit Admin</button>
+        </div>
+    </div>
+
+    <div id="chat-window"></div>
+
+    <div class="controls-wrap">
+        <div class="controls-top">
+            <label class="toggle-label"><input type="checkbox" id="autoscroll_toggle" checked> Auto-scroll</label>
+            <label class="toggle-label"><input type="checkbox" id="notif_toggle" checked> Notifications</label>
+        </div>
+        <div class="input-container">
+            <div class="picker-anchor">
+                <div id="emoji-picker"></div>
+                <button class="tool-btn" id="emoji-btn" title="Emoji picker">😊</button>
+            </div>
+            <div class="picker-anchor">
+                <div id="pic-picker">
+                    <label>Paste image URL</label>
+                    <input type="text" id="pic-url-input" placeholder="https://...">
+                    <img id="pic-preview" alt="preview">
+                    <button id="pic-insert-btn">Insert Image</button>
+                </div>
+                <button class="tool-btn" id="pic-btn" title="Insert image">🖼️</button>
+            </div>
+            <textarea id="message-input" placeholder="Type your message..."></textarea>
+            <button id="send-btn"><div class="arrow-icon"></div></button>
+        </div>
+    </div>
+</div>
+
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
+
+let supabase, username, roomName, roomPassword;
+const ADMIN_PASS = "lemmein";
+
+const loginBtn    = document.getElementById('login_btn');
+const sendBtn     = document.getElementById('send-btn');
+const chatWindow  = document.getElementById('chat-window');
+const messageInput = document.getElementById('message-input');
+const autoscrollToggle = document.getElementById('autoscroll_toggle');
+const notifToggle = document.getElementById('notif_toggle');
+const clientIdTxt = document.getElementById('clientIdTxt');
+const switchRoomBtn = document.getElementById('switch-room-btn');
+const logoutBtn = document.getElementById('logout-btn');
+const emojiBtn    = document.getElementById('emoji-btn');
+const picBtn      = document.getElementById('pic-btn');
+const emojiPicker = document.getElementById('emoji-picker');
+const picPicker   = document.getElementById('pic-picker');
+const picUrlInput = document.getElementById('pic-url-input');
+const picPreview  = document.getElementById('pic-preview');
+const lightbox    = document.getElementById('lightbox');
+const lightboxImg = document.getElementById('lightbox-img');
+
+const ROOMS = ['room1','room2','room3','room4','room5','room6'];
+let chatChannel = null;
+
+// ---- CLIENT ID ----
+let clientId = localStorage.getItem("clientId") || crypto.randomUUID();
+localStorage.setItem("clientId", clientId);
+clientIdTxt.innerText = "ID: " + clientId.substring(0, 8) + "...";
+
+clientIdTxt.onclick = (e) => {
+    e.preventDefault();
+    showPrompt("Admin / ID", "Enter admin password — or leave blank to log your full ID to console.", [{label:"Cancel",type:"secondary"},{label:"OK",type:"primary"}], (btn, val) => {
+        if(btn !== "OK") return;
+        if(val === ADMIN_PASS) {
+            document.body.classList.add('admin-mode');
+            showAlert("Admin Mode", "Admin mode is now active.", "🔐");
+        } else {
+            console.log("--- FULL CLIENT ID ---\n" + clientId + "\n----------------------");
+            showAlert("Client ID", "Your full ID has been logged to F12 console.", "🆔");
+        }
+    }, "password");
+};
+
+window.exitAdmin = () => document.body.classList.remove('admin-mode');
+
+async function unsubscribeCurrentRoom() {
+    if (!chatChannel) return;
+    try { await chatChannel.unsubscribe(); } catch {}
+    try { supabase.removeChannel(chatChannel); } catch {}
+    chatChannel = null;
+}
+
+async function loadRecentMessagesForRoom(count = 50, silent = false) {
+    if (!supabase || !roomName) return;
+    const { data, error } = await supabase.from(roomName)
+        .select('*').order('created_at', { ascending: false }).limit(count);
+    if (error) return showAlert("Error", error.message, "❌");
+    chatWindow.innerHTML = '';
+    const msgs = (data || []).reverse();
+    msgs.forEach(m => renderMessage(m));
+    if (!silent) showAlert("Loaded", `Loaded ${msgs.length} messages.`, "📜");
+}
+
+async function getBanMap() {
+    if (!supabase || !clientId) return {};
+    const { data: bans, error } = await supabase.from('banned_ids').select('*').eq('client_id', clientId);
+    if (error) {
+        showAlert("Error", "Unable to check bans: " + error.message, "⚠️");
+        return {};
+    }
+    const map = {};
+    (bans || []).forEach(b => {
+        map[b.room] = b;
+    });
+    return map;
+}
+
+async function showRoomSwitcher() {
+    const banMap = await getBanMap();
+    const bannedAll = !!banMap.all;
+    const c = document.createElement('div');
+    c.innerHTML = `<div class="modal-body">Choose a room to switch to:</div>`;
+    const list = document.createElement('div');
+    list.className = 'modal-scroll-list';
+
+    ROOMS.forEach(room => {
+        const isCurrent = room === roomName;
+        const isBanned = bannedAll || !!banMap[room];
+        const item = document.createElement('button');
+        item.className = 'modal-btn secondary';
+        item.style.width = '100%';
+        item.style.textAlign = 'left';
+        item.style.marginTop = '6px';
+        item.disabled = isBanned && !isCurrent;
+        let label = room;
+        if (isCurrent) label += ' (current)';
+        if (isBanned && !isCurrent) label += ' (BANNED)';
+        item.textContent = label;
+        item.onclick = async () => {
+            if (isBanned && !isCurrent) return;
+            overlay.classList.remove('open');
+            if (room !== roomName) await subscribeToRoom(room);
+        };
+        list.appendChild(item);
+    });
+
+    if (bannedAll) {
+        const note = document.createElement('div');
+        note.className = 'modal-notice';
+        note.textContent = 'You are banned from all rooms. You cannot switch rooms.';
+        c.appendChild(note);
+    }
+
+    c.appendChild(list);
+    showModal({ title: 'Switch Room', content: c, buttons: [{ label: 'Close', type: 'secondary' }] });
+}
+
+async function subscribeToRoom(room) {
+    if (!supabase) return;
+    if (roomName === room && chatChannel) return;
+    const banMap = await getBanMap();
+    if (banMap.all || banMap[room]) {
+        return showAlert("Room Blocked", `You are banned from ${room}.`, "❌");
+    }
+    await unsubscribeCurrentRoom();
+    roomName = room;
+    document.getElementById('display-room').innerText = roomName;
+    chatWindow.innerHTML = '';
+    chatChannel = supabase.channel('chat-' + roomName);
+    chatChannel.on('postgres_changes', { event: 'INSERT', schema: 'public', table: roomName }, p => renderMessage(p.new));
+    await chatChannel.subscribe();
+}
+
+// ---- MODAL SYSTEM ----
+const overlay = document.getElementById('modal-overlay');
+const modalTitle = document.getElementById('modal-title');
+const modalContent = document.getElementById('modal-content');
+const modalBtns = document.getElementById('modal-btns');
+
+function showModal({ title, content, buttons }) {
+    modalTitle.textContent = title;
+    modalContent.innerHTML = '';
+    modalContent.appendChild(content);
+    modalBtns.innerHTML = '';
+    buttons.forEach(b => {
+        const btn = document.createElement('button');
+        btn.className = 'modal-btn ' + (b.type || 'secondary');
+        btn.textContent = b.label;
+        btn.onclick = () => { overlay.classList.remove('open'); b.action?.(); };
+        modalBtns.appendChild(btn);
+    });
+    overlay.classList.add('open');
+    overlay.onclick = (e) => { if(e.target === overlay) overlay.classList.remove('open'); };
+}
+
+function showAlert(title, message, icon = 'ℹ️') {
+    const c = document.createElement('div');
+    c.innerHTML = `<div style="font-size:36px;margin-bottom:10px">${icon}</div><div class="modal-body">${message}</div>`;
+    showModal({ title, content: c, buttons: [{ label: 'OK', type: 'primary', action: ()=>{} }] });
+}
+
+function showPrompt(title, message, btns, callback, inputType = 'text') {
+    const c = document.createElement('div');
+    c.innerHTML = `<div class="modal-body">${message}</div><input type="${inputType}" class="modal-input" id="mp-input" placeholder="">`;
+    showModal({
+        title, content: c,
+        buttons: btns.map(b => ({
+            ...b,
+            action: () => callback(b.label, document.getElementById('mp-input')?.value ?? '')
+        }))
+    });
+    setTimeout(() => document.getElementById('mp-input')?.focus(), 50);
+}
+
+function showDoublePrompt(title, p1label, p2label, btns, callback) {
+    const c = document.createElement('div');
+    c.innerHTML = `<label class="modal-body">${p1label}</label><input type="text" class="modal-input" id="dp-1" placeholder=""><label class="modal-body">${p2label}</label><input type="text" class="modal-input" id="dp-2" placeholder="">`;
+    showModal({
+        title, content: c,
+        buttons: btns.map(b => ({
+            ...b,
+            action: () => callback(b.label, document.getElementById('dp-1')?.value ?? '', document.getElementById('dp-2')?.value ?? '')
+        }))
+    });
+}
+
+function showList(title, items, footNote) {
+    const c = document.createElement('div');
+    const list = document.createElement('div');
+    list.className = 'modal-scroll-list';
+    list.textContent = items.length ? items.join('\n') : '(empty)';
+    if(footNote) {
+        const note = document.createElement('div');
+        note.className = 'modal-notice';
+        note.textContent = footNote;
+        c.appendChild(note);
+    }
+    c.appendChild(list);
+    showModal({ title, content: c, buttons: [{ label: 'Close', type: 'secondary' }] });
+}
+
+// ---- ADMIN ----
+window.showBannedList = async () => {
+    const { data: bans, error } = await supabase.from('banned_ids').select('*');
+    if(error) return showAlert("Error", "Could not fetch ban list: " + error.message, "❌");
+    const lines = (bans||[]).map(b => `ID: ${b.client_id.substring(0,8)}...  Room: ${b.room}`);
+    console.log("FULL BAN LIST:", bans);
+    showList("Banned Users", lines, "Full IDs logged to F12 console.");
+};
+
+window.banUser = async (targetId) => {
+    showDoublePrompt("Ban User", "Reason for ban?", `Room scope (all / ${chatChannel})`, [
+        {label:"Cancel",type:"secondary"},
+        {label:"Ban",type:"danger"}
+    ], async (btn, reason, scope) => {
+        if(btn !== "Ban") return;
+        showPrompt("Ban — DB Key", "Enter database secret key (for RLS):", [
+            {label:"Cancel",type:"secondary"},
+            {label:"Confirm",type:"danger"}
+        ], async (b2, adminSecret) => {
+            if(b2 !== "Confirm" || !adminSecret) return;
+            const banRoom = scope || "all";
+            const { error } = await supabase.from('banned_ids').insert({
+                client_id: targetId, reason: reason || "No reason given",
+                room: banRoom, admin_key: adminSecret
+            });
+            if(error) showAlert("Ban Failed", error.message, "❌");
+            else {
+                showAlert("Banned", "User has been banned.", "🔨");
+                if (targetId === clientId && (banRoom === 'all' || banRoom === roomName)) {
+                    showBanScreen(reason || "No reason given");
+                }
+            }
+        }, "password");
+    });
+};
+
+window.unbanPrompt = async () => {
+    showDoublePrompt("Unban User", "Full Client ID to unban:", "Database secret key (RLS):", [
+        {label:"Cancel",type:"secondary"},
+        {label:"Unban",type:"primary"}
+    ], async (btn, targetId, adminSecret) => {
+        if(btn !== "Unban" || !targetId || !adminSecret) return;
+        const { error } = await supabase.from('banned_ids').delete()
+            .eq('client_id', targetId).eq('admin_key', adminSecret);
+        if(error) showAlert("Unban Failed", error.message, "❌");
+        else showAlert("Unbanned", "User unbanned (if key was correct).", "✅");
+    });
+};
+
+window.selfUnban = async () => {
+    showPrompt("Self-Unban", "Admin password:", [
+        {label:"Cancel",type:"secondary"},
+        {label:"Unban",type:"primary"}
+    ], async (btn, adminPass) => {
+        if(btn !== "Unban" || !adminPass) return;
+        if(adminPass !== ADMIN_PASS) {
+            return showAlert("Access Denied", "Incorrect admin password.", "❌");
+        }
+        showPrompt("Self-Unban", "Database secret key (RLS):", [
+            {label:"Cancel",type:"secondary"},
+            {label:"Unban",type:"primary"}
+        ], async (btn2, adminSecret) => {
+            if(btn2 !== "Unban" || !adminSecret) return;
+            const { error } = await supabase.from('banned_ids').delete()
+                .eq('client_id', clientId).eq('admin_key', adminSecret);
+            if(error) return showAlert("Unban Failed", error.message, "❌");
+            showAlert("Unbanned", "You have been unbanned. Reloading...", "✅");
+            setTimeout(() => location.reload(), 800);
+        }, "password");
+    }, "password");
+};
+
+window.loadRecentMessages = () => {
+    showPrompt("Load Recent Messages", "How many recent messages would you like to load?", [
+        {label:"Cancel",type:"secondary"},
+        {label:"Load",type:"primary"}
+    ], async (btn, val) => {
+        if(btn !== "Load") return;
+        const n = parseInt(val) || 50;
+        const { data, error } = await supabase.from(roomName)
+            .select('*').order('created_at', {ascending: false}).limit(n);
+        if(error) return showAlert("Error", error.message, "❌");
+        chatWindow.innerHTML = '';
+        const msgs = (data || []).reverse();
+        msgs.forEach(m => renderMessage(m));
+        showAlert("Loaded", `Loaded ${msgs.length} messages.`, "📜");
+    });
+};
+
+// ---- LOGIN ----
+loginBtn.onclick = async () => {
+    const url = "https://ucgbhaggcdpsdhncgwzb.supabase.co";
+    const key = document.getElementById('anon_key_input').value.trim();
+    username  = document.getElementById('username_txt').value.trim();
+    roomName  = document.getElementById('room_input').value.trim();
+    roomPassword = document.getElementById('room_pass_input').value.trim();
+
+    if(!key || !username || !roomName || !roomPassword) return showAlert("Missing Info", "Please fill in all fields.", "⚠️");
+
+    supabase = createClient(url, key, { auth: { persistSession: false } });
+
+    const { data: bans, error } = await supabase.from('banned_ids').select('*').eq('client_id', clientId);
+    if (error) return showAlert("Ban Check Failed", error.message, "⚠️");
+    const banEntry = (bans || []).find(b => b.room === 'all' || b.room === roomName);
+    if (banEntry) { showBanScreen(banEntry.reason); return; }
+
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-chat').style.display = 'flex';
+    document.getElementById('display-name').innerText = username;
+    document.getElementById('display-room').innerText = roomName;
+
+    await subscribeToRoom(roomName);
+    supabase.channel('bouncer').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'banned_ids' }, p => {
+        if(p.new.client_id === clientId && (p.new.room === 'all' || p.new.room === roomName)) showBanScreen(p.new.reason);
+    }).subscribe();
+
+    if(notifToggle.checked) Notification.requestPermission();
+};
+
+// ---- SEND ----
+async function sendMessage() {
+    const text = messageInput.value.trim();
+    if(!text || !roomPassword) return;
+    messageInput.value = '';
+    resizeInput();
+    const { error } = await supabase.from(roomName).insert({
+        user: username, text, client_id: clientId, pass_key: roomPassword
+    });
+    if(error) showAlert("Send Failed", "Wrong password or DB blocked the message.", "❌");
+}
+
+// ---- RENDER ----
+function parseText(raw) {
+    // Detect [picture{url}] tags
+    const imgTagRe = /\[picture\{([^}]+)\}\]/g;
+    // Split into segments
+    let parts = [];
+    let lastIdx = 0, match;
+    while((match = imgTagRe.exec(raw)) !== null) {
+        if(match.index > lastIdx) parts.push({ type:'text', val: raw.slice(lastIdx, match.index) });
+        parts.push({ type:'img', val: match[1] });
+        lastIdx = match.index + match[0].length;
+    }
+    if(lastIdx < raw.length) parts.push({ type:'text', val: raw.slice(lastIdx) });
+    return parts;
+}
+
+function escapeHtml(s) {
+    return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+const URL_RE = /(https?:\/\/[^\s<>"']+)/g;
+function linkify(text) {
+    return escapeHtml(text).replace(URL_RE, url => `<a href="${url}" target="_blank" rel="noopener noreferrer">${url}</a>`);
+}
+
+function renderMessage(msg) {
+    const isMe = msg.user === username;
+    const time = new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const div = document.createElement('div');
+    div.className = `msg-box ${isMe ? 'msg-own' : 'msg-other'}`;
+
+    const adminHtml = `<span class="admin-only">
+        <br><small style="color:var(--accent);font-family:'DM Mono',monospace">ID: ${msg.client_id}</small>
+        <span class="ban-link" onclick="banUser('${msg.client_id}')">[BAN]</span>
+    </span>`;
+
+    const segments = parseText(msg.text || '');
+    let contentHtml = '';
+    segments.forEach(seg => {
+        if(seg.type === 'text') {
+            contentHtml += `<span>${linkify(seg.val)}</span>`;
+        } else if(seg.type === 'img') {
+            contentHtml += `<br><img class="msg-image" src="${escapeHtml(seg.val)}" alt="image"
+                onerror="this.style.display='none';this.nextElementSibling.style.display='block'"
+                onclick="openLightbox('${escapeHtml(seg.val)}')">
+                <div class="msg-img-error" style="display:none">⚠️ Could not load image</div>`;
+        }
+    });
+
+    div.innerHTML = `
+        <div class="msg-header">
+            <span class="msg-username">${escapeHtml(msg.user)}${adminHtml}</span>
+            <span class="msg-id">#${msg.id || '…'}</span>
+            <span class="msg-time">${time}</span>
+        </div>
+        <div class="msg-text">${contentHtml}</div>
+    `;
+    chatWindow.appendChild(div);
+
+    if(!isMe && notifToggle.checked && !document.hasFocus()) {
+        new Notification(`${msg.user}`, { body: msg.text });
+    }
+    if(autoscrollToggle.checked) chatWindow.scrollTo({ top: chatWindow.scrollHeight, behavior: 'smooth' });
+}
+
+window.openLightbox = (src) => {
+    lightboxImg.src = src;
+    lightbox.classList.add('open');
+};
+
+// ---- EMOJI PICKER ----
+const EMOJIS = ['😀','😂','🥲','😭','😍','🤔','😎','🥳','😢','😡','🤯','👍','👎','❤️','🔥','✨','🎉','💀','🙈','🤝','💯','🫡','😶','🗿','🤌','💅','🫠','😤','🤡','👀','💬','⚡','🌈','🍕','🎮','🏆'];
+EMOJIS.forEach(e => {
+    const btn = document.createElement('button');
+    btn.className = 'emoji-item';
+    btn.textContent = e;
+    btn.onclick = () => {
+        insertAtCursor(messageInput, e);
+        emojiPicker.classList.remove('open');
+        messageInput.focus();
+    };
+    emojiPicker.appendChild(btn);
+});
+
+emojiBtn.onclick = (e) => {
+    e.stopPropagation();
+    emojiPicker.classList.toggle('open');
+    picPicker.classList.remove('open');
+};
+
+// ---- PICTURE PICKER ----
+picBtn.onclick = (e) => {
+    e.stopPropagation();
+    picPicker.classList.toggle('open');
+    emojiPicker.classList.remove('open');
+};
+
+picUrlInput.oninput = () => {
+    const url = picUrlInput.value.trim();
+    if(url.startsWith('http')) {
+        picPreview.src = url;
+        picPreview.style.display = 'block';
+    } else {
+        picPreview.style.display = 'none';
+    }
+};
+
+document.getElementById('pic-insert-btn').onclick = () => {
+    const url = picUrlInput.value.trim();
+    if(!url) return;
+    insertAtCursor(messageInput, `[picture{${url}}]`);
+    picUrlInput.value = '';
+    picPreview.style.display = 'none';
+    picPicker.classList.remove('open');
+    messageInput.focus();
+};
+
+document.addEventListener('click', (e) => {
+    if (!emojiPicker.contains(e.target) && e.target !== emojiBtn) emojiPicker.classList.remove('open');
+    if (!picPicker.contains(e.target) && e.target !== picBtn) picPicker.classList.remove('open');
+});
+
+logoutBtn.onclick = () => {
+    const c = document.createElement('div');
+    c.innerHTML = `<div class="modal-body">Are you sure you want to logout and leave the current room?</div>`;
+    showModal({
+        title: 'Confirm Logout',
+        content: c,
+        buttons: [
+            { label: 'Cancel', type: 'secondary' },
+            { label: 'Logout', type: 'danger', action: () => location.reload() }
+        ]
+    });
+};
+
+switchRoomBtn.onclick = () => showRoomSwitcher();
+
+const selfUnbanBtn = document.getElementById('self-unban-btn');
+if (selfUnbanBtn) selfUnbanBtn.onclick = () => window.selfUnban();
+
+// ---- HELPERS ----
+function insertAtCursor(el, text) {
+    const start = el.selectionStart, end = el.selectionEnd;
+    const val = el.value;
+    el.value = val.slice(0, start) + text + val.slice(end);
+    el.selectionStart = el.selectionEnd = start + text.length;
+}
+
+function resizeInput() {
+    messageInput.style.height = '36px';
+    messageInput.style.height = Math.min(messageInput.scrollHeight, 120) + 'px';
+}
+
+messageInput.addEventListener('input', resizeInput);
+sendBtn.onclick = sendMessage;
+messageInput.onkeydown = (e) => {
+    if(e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+};
+
+function showBanScreen(r) {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('main-chat').style.display = 'none';
+    document.getElementById('banned-screen').style.display = 'flex';
+    document.getElementById('ban-reason-text').innerText = r || "No reason given";
+}
+</script>
+</body>
+</html>
